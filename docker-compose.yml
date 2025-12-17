@@ -1,17 +1,30 @@
 services:
+  server:
+    build:
+      context: .
+    network_mode: "host" # ใช้ host เพื่อให้ต่อ localhost:5432 ได้ตาม AppModule
+    command: node dist/main
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
-    image: postgres:14-alpine
-    container_name: bookstore_db
+    image: postgres:15-alpine
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: bookstore_dev
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=bookstore_dev
     ports:
-      - '5432:5432'
+      - "5432:5432"
+    healthcheck:
+      # แก้ไขบรรทัดนี้: ตรวจสอบความพร้อมโดยระบุ database ให้ถูกต้อง
+      test: ["CMD", "pg_isready", "-U", "admin", "-d", "bookstore_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
-  
+  db-data:
